@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
-import { Paperclip, FileText, FileSpreadsheet, File, X, AlertTriangle } from 'lucide-react';
+import { Paperclip, FileText, FileSpreadsheet, File, X, AlertTriangle, Beer } from 'lucide-react';
 
 interface FileUploadItem {
   file: File;
@@ -16,7 +16,6 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
   const [files, setFiles] = useState<FileUploadItem[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [draggedFileName, setDraggedFileName] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,18 +111,12 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    setDraggedFileName('');
     addFiles(e.dataTransfer.files);
   }, [addFiles]);
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
-    
-    // Check if files are being dragged
-    if (e.dataTransfer.types.includes('Files')) {
-      setDraggedFileName('ドラッグ中のファイル');
-    }
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -135,7 +128,6 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
     // Only reset if we're leaving the entire drop zone, not just moving between child elements
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
-      setDraggedFileName('');
     }
   }, []);
 
@@ -163,11 +155,15 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
     setTimeout(() => {
       setIsAnalyzing(false);
       alert('分析が完了しました。結果をご確認ください。');
+      
+      // 分析完了後にファイルリストとエラーをクリア
+      setFiles([]);
+      setErrors([]);
     }, 5000);
   };
 
   return (
-    <div className={`max-w-4xl mx-auto ${className}`}>
+    <div className={`max-w-4xl mx-auto pb-12 ${className}`}>
       {/* ヘッダー */}
       <div className="bg-black text-white py-4 px-6 mb-8">
         <h1 className="text-xl font-bold text-left">酒税法リスク分析判定システム</h1>
@@ -209,15 +205,10 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
           <Paperclip className={`w-12 h-12 ${isDragOver ? 'text-[#FB8F44]' : 'text-gray-400'}`} />
           
           <div className="space-y-2 text-center mt-4 mb-4 h-[120px] flex flex-col justify-center">
-            {isDragOver && draggedFileName ? (
-              <>
-                <p className="text-lg font-medium text-[#B34700]">
-                  ここにファイルをドロップ
-                </p>
-                <div className="bg-[#FB8F44] text-white px-6 py-2 rounded font-medium flex items-center mx-auto w-fit mt-4">
-                  {draggedFileName}
-                </div>
-              </>
+            {isDragOver ? (
+              <p className="text-lg font-medium text-[#B34700]">
+                ここにファイルをドロップしてアップロード
+              </p>
             ) : (
               <>
                 <p className="text-lg font-medium text-black">
@@ -306,15 +297,25 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
         </button>
       </div>
 
-      {/* ローディング表示 */}
+      {/* ローディングオーバーレイ */}
       {isAnalyzing && (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#B34700] mb-4"></div>
-          <div className="space-y-2">
-            <p className="text-lg font-medium text-black">読み込み中...</p>
-            <p className="text-sm text-gray-600">
-              アップロードされた資料を分析しています。しばらくお待ちください。
-            </p>
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 shadow-xl max-w-md mx-4">
+            <div className="text-center">
+              <div className="relative inline-block mb-6">
+                <Beer className="w-16 h-16 text-gray-300" />
+                <div className="absolute inset-0 overflow-hidden">
+                  <div className="beer-fill-animation">
+                    <Beer className="w-16 h-16 text-[#D1B607]" />
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-lg font-medium text-black mb-2">分析中...</h3>
+              <p className="text-sm text-gray-600">
+                アップロードされた資料を分析しています。<br />
+                しばらくお待ちください。
+              </p>
+            </div>
           </div>
         </div>
       )}
