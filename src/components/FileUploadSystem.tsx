@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
+import { Paperclip, FileText, FileSpreadsheet, File, X, AlertTriangle } from 'lucide-react';
 
 interface FileUploadItem {
   file: File;
@@ -15,6 +16,7 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
   const [files, setFiles] = useState<FileUploadItem[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [draggedFileName, setDraggedFileName] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,10 +32,14 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
   const getFileIcon = (fileName: string) => {
     const ext = fileName.toLowerCase().split('.').pop();
     switch (ext) {
-      case 'pdf': return '📄';
-      case 'docx': return '📝';
-      case 'xlsx': return '📊';
-      default: return '📁';
+      case 'pdf': 
+        return <FileText className="w-6 h-6 text-red-500" />;
+      case 'docx': 
+        return <FileText className="w-6 h-6 text-blue-500" />;
+      case 'xlsx': 
+        return <FileSpreadsheet className="w-6 h-6 text-green-500" />;
+      default: 
+        return <File className="w-6 h-6 text-gray-500" />;
     }
   };
 
@@ -106,17 +112,31 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
+    setDraggedFileName('');
     addFiles(e.dataTransfer.files);
   }, [addFiles]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
+    
+    // Check if files are being dragged
+    if (e.dataTransfer.types.includes('Files')) {
+      setDraggedFileName('ドラッグ中のファイル');
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
+    // Only reset if we're leaving the entire drop zone, not just moving between child elements
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+      setDraggedFileName('');
+    }
   }, []);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,7 +162,7 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
     // 5秒のモック処理でローディング表示テスト
     setTimeout(() => {
       setIsAnalyzing(false);
-      alert('分析が完了しました。（モック処理）');
+      alert('分析が完了しました。結果をご確認ください。');
     }, 5000);
   };
 
@@ -175,53 +195,70 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
 
       {/* ドラッグ&ドロップエリア */}
       <div
-        className={`border-2 border-dashed rounded-lg p-12 text-center mb-6 transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-12 text-center mb-6 transition-all duration-300 min-h-[300px] ${
           isDragOver
-            ? 'border-[#B34700] bg-[#B34700]/5'
+            ? 'border-[#FB8F44] bg-[#FB8F44]/10'
             : 'border-gray-300 bg-gray-50'
         }`}
         onDrop={handleDrop}
+        onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
-        <div className="flex flex-col items-center space-y-4">
-          <div className="text-6xl text-gray-400">📁</div>
-          <div className="space-y-2">
-            <p className="text-lg font-medium text-black">
-              ファイルをドラッグ&ドロップ
-            </p>
-            <p className="text-gray-500">または</p>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="bg-[#B34700] hover:bg-[#FB8F44] text-white px-6 py-2 rounded transition-colors"
-            >
-              ファイルを選択
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".pdf,.docx,.xlsx"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
+        <div className="flex flex-col items-center justify-center h-full">
+          <Paperclip className={`w-12 h-12 ${isDragOver ? 'text-[#FB8F44]' : 'text-gray-400'}`} />
+          
+          <div className="space-y-2 text-center mt-4 mb-4 h-[120px] flex flex-col justify-center">
+            {isDragOver && draggedFileName ? (
+              <>
+                <p className="text-lg font-medium text-[#B34700]">
+                  ここにファイルをドロップ
+                </p>
+                <div className="bg-[#FB8F44] text-white px-6 py-2 rounded font-medium flex items-center mx-auto w-fit mt-4">
+                  {draggedFileName}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-medium text-black">
+                  ファイルをドラッグ&ドロップ
+                </p>
+                <p className="text-gray-500">または</p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-[#B34700] hover:bg-[#FB8F44] text-white px-6 py-2 rounded transition-colors"
+                >
+                  ファイルを選択
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.docx,.xlsx"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </>
+            )}
           </div>
+          
           <p className="text-sm text-gray-500">
             ※PDF、Word、Excelファイルのファイルアップロードできます（10MB、3件まで）
           </p>
         </div>
-      </div>
 
-      {/* エラーメッセージ */}
-      {errors.length > 0 && (
-        <div className="mb-6">
-          {errors.map((error, index) => (
-            <div key={index} className="text-red-600 text-sm mb-1">
-              {error}
-            </div>
-          ))}
-        </div>
-      )}
+        {/* エラーメッセージをドロップエリア内に表示 */}
+        {errors.length > 0 && (
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            {errors.map((error, index) => (
+              <div key={index} className="text-red-600 text-sm mb-1 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                {error}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* アップロード済みファイル一覧 */}
       {files.length > 0 && (
@@ -233,7 +270,7 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
                 className="flex items-center justify-between p-3 bg-white border rounded-lg"
               >
                 <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getFileIcon(item.file.name)}</span>
+                  {getFileIcon(item.file.name)}
                   <div>
                     <p className="font-medium text-black">{item.file.name}</p>
                     <p className="text-sm text-gray-500">
@@ -243,10 +280,10 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
                 </div>
                 <button
                   onClick={() => removeFile(item.id)}
-                  className="text-gray-400 hover:text-red-500 text-xl"
+                  className="text-gray-400 hover:text-red-500 p-1"
                   aria-label="ファイルを削除"
                 >
-                  ×
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             ))}
@@ -274,7 +311,7 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#B34700] mb-4"></div>
           <div className="space-y-2">
-            <p className="text-lg font-medium text-black">Wait for it...</p>
+            <p className="text-lg font-medium text-black">読み込み中...</p>
             <p className="text-sm text-gray-600">
               アップロードされた資料を分析しています。しばらくお待ちください。
             </p>
