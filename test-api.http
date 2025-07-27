@@ -2,11 +2,11 @@
 ### 使い方: VS Code でこのファイルを開き、各リクエストの上にある「Send Request」をクリック
 
 @baseUrl = http://localhost:3000
-@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5Ab211a29yby5sb2NhbCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc1MzYxMDc5OSwiZXhwIjoxNzUzNjk3MTk5fQ.O5rOQWeI5vlNL0Dh4M5o-XNioYxZZHZKLakrE61kvxs
-@userToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjIsImVtYWlsIjoidXNlckBvbXVrb3JvLmxvY2FsIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NTM2MTEwNzEsImV4cCI6MTc1MzY5NzQ3MX0.G3nBWTksMBQ7UZaVqHb-CE9wvMmMRt6aXsBWo7OZgQQ
+@adminToken = YOUR_TOKEN_HERE
+@userToken = YOUR_TOKEN_HERE
 
 ### 1. 管理者ログイン（成功）
-POST {{baseUrl}}/api/auth/login
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
@@ -15,7 +15,7 @@ Content-Type: application/json
 }
 
 ### 2. 一般ユーザーログイン（成功）
-POST {{baseUrl}}/api/auth/login
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
@@ -24,7 +24,7 @@ Content-Type: application/json
 }
 
 ### 3. ログイン失敗（間違ったパスワード）
-POST {{baseUrl}}/api/auth/login
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
@@ -33,7 +33,7 @@ Content-Type: application/json
 }
 
 ### 4. ログイン失敗（存在しないユーザー）
-POST {{baseUrl}}/api/auth/login
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
@@ -42,7 +42,7 @@ Content-Type: application/json
 }
 
 ### 5. バリデーションエラー（短すぎるパスワード）
-POST {{baseUrl}}/api/auth/login
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
@@ -51,7 +51,7 @@ Content-Type: application/json
 }
 
 ### 6. バリデーションエラー（無効なメール形式）
-POST {{baseUrl}}/api/auth/login
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
@@ -60,7 +60,7 @@ Content-Type: application/json
 }
 
 ### 7. バリデーションエラー（パスワードに英字なし）
-POST {{baseUrl}}/api/auth/login
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
@@ -81,15 +81,15 @@ Authorization: Bearer invalid_token_here
 GET {{baseUrl}}/api/user/me
 
 ### 11. ログアウト（正常）
-POST {{baseUrl}}/api/auth/logout
+POST {{baseUrl}}/api/logout
 Authorization: Bearer {{adminToken}}
 
 ### 12. ログアウト（無効なトークン）
-POST {{baseUrl}}/api/auth/logout
+POST {{baseUrl}}/api/logout
 Authorization: Bearer invalid_token_here
 
 ### 13. 許可されていないHTTPメソッド（ログインでGET）
-GET {{baseUrl}}/api/auth/login
+GET {{baseUrl}}/api/login
 
 ### 14. 許可されていないHTTPメソッド（ユーザー情報でPOST）
 POST {{baseUrl}}/api/user/me
