@@ -137,9 +137,8 @@ export default function LoginForm() {
                   <input
                     id="email"
                     name="email"
-                    type="email"
+                    type="text"
                     autoComplete="email"
-                    required
                     className={`block w-full pl-10 pr-3 py-3 border ${
                       errors.email ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-[#B34700] focus:border-[#B34700]'
                     } placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 sm:text-sm transition-colors`}
