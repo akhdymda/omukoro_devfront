@@ -15,19 +15,27 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isInitialized: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const isAuthenticated = !!user;
 
   // 初期化時にローカルストレージからトークンを確認
   useEffect(() => {
     const initializeAuth = async () => {
+      // キャッシュされたユーザー情報を復元
+      const cachedUser = localStorage.getItem('cached_user');
+      if (cachedUser) {
+        setUser(JSON.parse(cachedUser));
+      }
+      
       const token = localStorage.getItem('access_token');
       
       if (token) {
@@ -42,19 +50,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const data = await response.json();
             if (data.success) {
               setUser(data.data);
+              localStorage.setItem('cached_user', JSON.stringify(data.data));
             } else {
               localStorage.removeItem('access_token');
+              localStorage.removeItem('cached_user');
+              setUser(null);
             }
           } else {
             localStorage.removeItem('access_token');
+            localStorage.removeItem('cached_user');
+            setUser(null);
           }
         } catch (error) {
           console.error('認証の初期化に失敗しました:', error);
           localStorage.removeItem('access_token');
+          localStorage.removeItem('cached_user');
+          setUser(null);
         }
+      } else {
+        // トークンがない場合はキャッシュもクリア
+        localStorage.removeItem('cached_user');
+        setUser(null);
       }
       
-      setIsLoading(false);
+      setIsInitialized(true);
     };
 
     initializeAuth();
@@ -87,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userData = await userResponse.json();
           if (userData.success) {
             setUser(userData.data);
+            localStorage.setItem('cached_user', JSON.stringify(userData.data));
           }
         }
       } else {
@@ -113,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('ログアウト処理でエラーが発生しました:', error);
     } finally {
       localStorage.removeItem('access_token');
+      localStorage.removeItem('cached_user');
       setUser(null);
     }
   };
@@ -125,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         isAuthenticated,
+        isInitialized,
       }}
     >
       {children}

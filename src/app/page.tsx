@@ -1,15 +1,22 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginForm from '@/components/LoginForm';
 import FileUploadSystem from '@/components/FileUploadSystem';
 import BeerLoadingAnimation from '@/components/BeerLoadingAnimation';
 
 export default function Home() {
-  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { isAuthenticated, isLoading, user, logout, isInitialized } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // ローディング中かつ認証済みの場合のみローディング表示
-  if (isLoading && isAuthenticated) {
+  // 初期化中は何も表示しない（Hydrationエラー回避）
+  if (!isInitialized) {
+    return null;
+  }
+
+  // ローディング中の表示
+  if (isLoading) {
     return <BeerLoadingAnimation message="認証確認中..." subMessage="アカウント情報を確認しています" />;
   }
 
@@ -35,10 +42,19 @@ export default function Home() {
                 {user?.email} ({user?.role === 'admin' ? '管理者' : 'ユーザー'})
               </span>
               <button
-                onClick={logout}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                onClick={async () => {
+                  setIsLoggingOut(true);
+                  await logout();
+                  setIsLoggingOut(false);
+                }}
+                disabled={isLoggingOut}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isLoggingOut
+                    ? 'bg-[#5A5552] cursor-not-allowed text-white'
+                    : 'bg-[#B34700] hover:bg-[#FB8F44] text-white'
+                }`}
               >
-                ログアウト
+                {isLoggingOut ? 'ログアウト中...' : 'ログアウト'}
               </button>
             </div>
           </div>
