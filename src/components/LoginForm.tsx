@@ -94,12 +94,6 @@ export default function LoginForm() {
 
   return (
     <>
-      {isSubmitting && (
-        <BeerLoadingAnimation 
-          message="ログイン中..." 
-          subMessage="認証情報を確認しています" 
-        />
-      )}
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-lg w-full">
           {/* メインカード */}
@@ -216,7 +210,7 @@ export default function LoginForm() {
                 }`}
               >
                 <Lock className="w-4 h-4 mr-2" />
-                ログイン
+                {isSubmitting ? 'ログイン中...' : 'ログイン'}
               </button>
 
               {/* セキュリティ通知 */}

@@ -8,8 +8,8 @@ import BeerLoadingAnimation from '@/components/BeerLoadingAnimation';
 export default function Home() {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
 
-  // ローディング中の表示
-  if (isLoading) {
+  // ローディング中かつ認証済みの場合のみローディング表示
+  if (isLoading && isAuthenticated) {
     return <BeerLoadingAnimation message="認証確認中..." subMessage="アカウント情報を確認しています" />;
   }
 

@@ -61,8 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
@@ -96,14 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = async () => {
-    setIsLoading(true);
-    
     try {
       const token = localStorage.getItem('access_token');
       
@@ -120,7 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       localStorage.removeItem('access_token');
       setUser(null);
-      setIsLoading(false);
     }
   };
 
