@@ -139,27 +139,79 @@ const FileUploadSystem: React.FC<FileUploadSystemProps> = ({ className = '' }) =
 
   const handleAnalysisStart = async () => {
     setIsAnalyzing(true);
+    setErrors([]);
     
-    // 将来のAPI連携用（現在はコメントアウト）
-    // const formData = new FormData();
-    // files.forEach((item, index) => {
-    //   formData.append(`file${index}`, item.file);
-    // });
-    // 
-    // const response = await fetch('/api/analyze', {
-    //   method: 'POST',
-    //   body: formData,
-    // });
-    
-    // 5秒のモック処理でローディング表示テスト
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      alert('分析が完了しました。結果をご確認ください。');
+    try {
+      // 各ファイルのテキスト抽出を実行
+      const extractionPromises = files.map(async (fileItem) => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/extract_text`, {
+            method: 'POST',
+            body: (() => {
+              const formData = new FormData();
+              formData.append('file', fileItem.file);
+              return formData;
+            })(),
+          });
+
+          if (!response.ok) {
+            throw new Error(`ファイル「${fileItem.file.name}」の処理に失敗しました`);
+          }
+
+          const result = await response.json();
+          return {
+            fileName: fileItem.file.name,
+            text: result.data?.text || '',
+            confidence: result.data?.confidence || 0,
+            success: true,
+          };
+        } catch (error) {
+          console.error(`ファイル処理エラー (${fileItem.file.name}):`, error);
+          return {
+            fileName: fileItem.file.name,
+            text: '',
+            confidence: 0,
+            success: false,
+            error: error instanceof Error ? error.message : '処理に失敗しました',
+          };
+        }
+      });
+
+      const results = await Promise.all(extractionPromises);
       
-      // 分析完了後にファイルリストとエラーをクリア
+      // エラーチェック
+      const failedFiles = results.filter(result => !result.success);
+      if (failedFiles.length > 0) {
+        const errorMessages = failedFiles.map(file => file.error || `${file.fileName}の処理に失敗しました`);
+        setErrors(errorMessages);
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // 成功した場合の処理
+      const extractedTexts = results
+        .filter(result => result.success && result.text.trim())
+        .map(result => `【${result.fileName}】\n${result.text}`)
+        .join('\n\n');
+
+      if (!extractedTexts.trim()) {
+        setErrors(['アップロードされたファイルからテキストを抽出できませんでした。']);
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // テキスト抽出成功時の表示（実際のアプリでは分析画面に遷移など）
+      alert(`テキスト抽出が完了しました。\n\n抽出されたテキスト:\n${extractedTexts.substring(0, 200)}${extractedTexts.length > 200 ? '...' : ''}`);
+      
+      // 完了後にファイルリストをクリア
       setFiles([]);
-      setErrors([]);
-    }, 5000);
+      
+    } catch (error) {
+      console.error('分析処理でエラーが発生しました:', error);
+      setErrors([error instanceof Error ? error.message : '分析処理でエラーが発生しました']);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (

@@ -5,9 +5,10 @@ import { ApiResponse } from '@/lib/validation';
 
 // ユーザー情報レスポンスの型定義
 export interface UserMeResponse {
-  id: number;
+  user_id: string;
   email: string;
-  role: 'admin' | 'user';
+  name: string;
+  role: string;
   created_at: string;
 }
 
@@ -52,11 +53,11 @@ export async function GET(request: NextRequest) {
     
     // ユーザー情報を取得（パスワードハッシュは除外）
     const [rows] = await connection.execute(
-      'SELECT id, email, role, created_at FROM users WHERE id = ? AND is_active = true',
+      'SELECT user_id, email, name, role, created_at FROM user WHERE user_id = ? AND is_active = true',
       [payload.userId]
     );
 
-    const user = (rows as Pick<User, 'id' | 'email' | 'role' | 'created_at'>[])[0] as Pick<User, 'id' | 'email' | 'role' | 'created_at'> | undefined;
+    const user = (rows as Pick<User, 'user_id' | 'email' | 'name' | 'role' | 'created_at'>[])[0] as Pick<User, 'user_id' | 'email' | 'name' | 'role' | 'created_at'> | undefined;
 
     if (!user) {
       return NextResponse.json<ApiResponse>({
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
       await connection.execute(
         'INSERT INTO operation_logs (user_id, action, timestamp, ip_address, user_agent) VALUES (?, ?, NOW(), ?, ?)',
         [
-          user.id,
+          user.user_id,
           'get_user_info',
           getClientIP(request),
           request.headers.get('user-agent') || ''
@@ -85,9 +86,10 @@ export async function GET(request: NextRequest) {
 
     // レスポンス用にデータをフォーマット
     const response: UserMeResponse = {
-      id: user.id,
+      user_id: user.user_id,
       email: user.email,
-      role: user.role,
+      name: user.name,
+      role: user.role || 'user',
       created_at: formatDateForResponse(user.created_at)
     };
 

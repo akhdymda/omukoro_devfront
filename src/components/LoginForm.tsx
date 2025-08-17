@@ -81,7 +81,7 @@ export default function LoginForm() {
     setErrors({});
 
     try {
-      await login(formData.email, formData.password);
+      await login({ email: formData.email, password: formData.password });
     } catch (error) {
       // セキュリティ上の理由で一般的なエラーメッセージを表示
       setErrors({

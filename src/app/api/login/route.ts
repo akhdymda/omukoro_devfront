@@ -40,23 +40,23 @@ export async function POST(request: NextRequest) {
     // データベース接続
     connection = await getConnection();
     
-    // ユーザー検索（セキュリティ上、存在チェックとパスワード検証を分けない）
+    // ユーザー検索（omukoroデータベースのuserテーブル用）
     const [rows] = await connection.execute(
-      'SELECT id, email, password_hash, role, is_active FROM users WHERE email = ? AND is_active = true',
+      'SELECT user_id, tenant_id, email, password, name, role, is_active FROM user WHERE email = ? AND is_active = true',
       [email]
     );
 
     const user = (rows as User[])[0] as User | undefined;
 
     // ユーザーが存在しない場合またはパスワードが一致しない場合
-    if (!user || !(await verifyPassword(password, user.password_hash))) {
+    if (!user || !(await verifyPassword(password, user.password))) {
       // 操作ログを記録（失敗）
       if (connection) {
         try {
           await connection.execute(
             'INSERT INTO operation_logs (user_id, action, timestamp, ip_address, user_agent) VALUES (?, ?, NOW(), ?, ?)',
             [
-              user?.id || null,
+              user?.user_id || null,
               'login_failed',
               getClientIP(request),
               request.headers.get('user-agent') || ''
@@ -78,9 +78,9 @@ export async function POST(request: NextRequest) {
 
     // JWTトークン生成
     const token = generateToken({
-      userId: user.id,
+      userId: user.user_id,
       email: user.email,
-      role: user.role
+      role: user.role || 'user'
     });
 
     // 操作ログを記録（成功）
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       await connection.execute(
         'INSERT INTO operation_logs (user_id, action, timestamp, ip_address, user_agent) VALUES (?, ?, NOW(), ?, ?)',
         [
-          user.id,
+          user.user_id,
           'login_success',
           getClientIP(request),
           request.headers.get('user-agent') || ''
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     const response: LoginResponse = {
       access_token: token,
       token_type: 'bearer',
-      role: user.role
+      role: user.role || 'user'
     };
 
     return NextResponse.json<ApiResponse<LoginResponse>>({

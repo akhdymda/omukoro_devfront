@@ -6,9 +6,12 @@ const dbConfig = {
   user: process.env.DATABASE_USER,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
-  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+  ssl: process.env.DATABASE_SSL === 'true' ? { 
+    rejectUnauthorized: false // Azure MySQL用に緩和
+  } : false,
   timezone: '+09:00', // 日本時間を明示的に設定
   dateStrings: true,  // 日時を文字列として取得（タイムゾーン変換を避ける）
+  connectTimeout: 20000 // 20秒
 };
 
 // 接続設定の検証
@@ -46,14 +49,16 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-// ユーザー型定義
+// ユーザー型定義（omukoroデータベース用）
 export interface User {
-  id: number;
+  user_id: string;
+  tenant_id: string;
   email: string;
-  password_hash: string;
-  role: 'admin' | 'user';
+  password: string;
+  name: string;
+  role?: string;
   is_active?: boolean;
-  created_at: string | Date; // dateStrings設定により文字列の可能性もある
+  created_at: string | Date;
   updated_at: string | Date;
 }
 

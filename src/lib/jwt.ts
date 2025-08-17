@@ -1,7 +1,7 @@
 import * as jwt from 'jsonwebtoken';
 
 export interface JWTPayload {
-  userId: number;
+  userId: string;
   email: string;
   role: 'admin' | 'user';
   iat?: number;

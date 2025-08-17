@@ -1,14 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginForm from '@/components/LoginForm';
-import FileUploadSystem from '@/components/FileUploadSystem';
 import BeerLoadingAnimation from '@/components/BeerLoadingAnimation';
+import Header from '@/components/ui/Header';
+import TabMenu from '@/components/ui/TabMenu';
+import TabContent from '@/components/ui/TabContent';
+import type { TabType } from '@/types';
 
 export default function Home() {
+  const [isMounted, setIsMounted] = useState(false);
+  
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // クライアントサイドでのマウント前は何も表示しない
+  if (!isMounted) {
+    return null;
+  }
+
+  return <AuthenticatedHome />;
+}
+
+function AuthenticatedHome() {
   const { isAuthenticated, isLoading, user, logout, isInitialized } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('document-analysis');
 
   // 初期化中は何も表示しない（Hydrationエラー回避）
   if (!isInitialized) {
@@ -28,42 +46,11 @@ export default function Home() {
   // 認証済みの場合はメインアプリケーションを表示
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                酒税法リスク分析判定システム
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                {user?.email} ({user?.role === 'admin' ? '管理者' : 'ユーザー'})
-              </span>
-              <button
-                onClick={async () => {
-                  setIsLoggingOut(true);
-                  await logout();
-                  setIsLoggingOut(false);
-                }}
-                disabled={isLoggingOut}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isLoggingOut
-                    ? 'bg-[#5A5552] cursor-not-allowed text-white'
-                    : 'bg-[#B34700] hover:bg-[#FB8F44] text-white'
-                }`}
-              >
-                {isLoggingOut ? 'ログアウト中...' : 'ログアウト'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* メインコンテンツ */}
-      <main>
-        <FileUploadSystem />
+      <Header user={user!} onLogout={logout} />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <TabMenu activeTab={activeTab} onTabChange={setActiveTab} />
+        <TabContent activeTab={activeTab} />
       </main>
     </div>
   );
